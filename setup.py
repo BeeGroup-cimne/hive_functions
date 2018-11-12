@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="hive_functions",
-    version="0.0.5",
+    version="0.0.6",
     author="Bee Group",
     description="Functions to work with hive",
     long_description=long_description,
