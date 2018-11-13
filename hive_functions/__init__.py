@@ -35,13 +35,14 @@ def delete_hive_table(hive_connection, table):
     Deletes a hive table
     :param hive_connection: The connection to hive
     :param table: The name of the table to delete
-    :return: None
+    :return: True if the table has been deleted
     """
     sentence = "DROP TABLE {}".format(table)
     try:
         hive_connection.execute(sentence)
     except Exception as e:
         raise Exception('Failed to delete HIVE table {}: {}'.format(table, e))
+    return True
 
 
 def create_hive_table_from_hbase_table(hive_connection, table_hive, table_hbase, hive_key, columns, id_task=None):
@@ -53,7 +54,7 @@ def create_hive_table_from_hbase_table(hive_connection, table_hive, table_hbase,
     :param hive_key: a dictionary {key:type} with the key and type of hive keys
     :param hive_columns: a list of tuples (key, type, column) with the key and type of hive columns and the column of hbase table
     :param id_task: The id of the task to generate unique tables
-    :return: None
+    :return: the name of the table
     """
     if id_task:
         table_hive = table_hive + '_' + id_task
@@ -77,3 +78,4 @@ def create_hive_table_from_hbase_table(hive_connection, table_hive, table_hbase,
         hive_connection.execute(sentence)
     except Exception as e:
         raise Exception('Failed to create HIVE temporary table {}: {}'.format(table_hive, e))
+    return table_hive
