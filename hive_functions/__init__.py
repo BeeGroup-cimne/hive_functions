@@ -65,7 +65,7 @@ def create_hive_table_from_hbase_table(hive_connection, table_hive, table_hbase,
          STORED BY \
          'org.apache.hadoop.hive.hbase.HBaseStorageHandler' \
           WITH SERDEPROPERTIES \
-          ('hbase.columns.mapping' = ':key, {hbase_columns') \
+          ('hbase.columns.mapping' = ':key, {hbase_columns}') \
           TBLPROPERTIES \
           ('hbase.table.name' = '{table_hbase}')"
     sentence = sentence.format(table_hive=table_hive,
