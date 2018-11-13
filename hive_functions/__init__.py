@@ -19,7 +19,7 @@ def create_hive_module_input_table(hive_connection, table, hdfs_file, columns, i
                 ROW FORMAT DELIMITED \
                 FIELDS TERMINATED BY '{sep}' \
                 STORED AS TEXTFILE LOCATION '{hdfs_file}'"
-    sentence.format(table=table,
+    sentence = sentence.format(table=table,
                     columns=",".join(["{} {}".format(c[0], c[1]) for c in columns]),
                     sep=sep,
                     hdfs_file=hdfs_file)
@@ -68,7 +68,7 @@ def create_hive_table_from_hbase_table(hive_connection, table_hive, table_hbase,
           ('hbase.columns.mapping' = ':key, {hbase_columns') \
           TBLPROPERTIES \
           ('hbase.table.name' = '{table_hbase}')"
-    sentence.format(table_hive=table_hive,
+    sentence = sentence.format(table_hive=table_hive,
                     hive_key=",".join(["{}:{}".format(k,t) for k,t in hive_key.items()]),
                     hive_columns=",".join(["{} {}".format(c[0],c[1]) for c in columns]),
                     hbase_columns=",".join([c[2] for c in columns]),
