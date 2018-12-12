@@ -69,7 +69,7 @@ def create_hive_table_from_hbase_table(hive_connection, table_hive, table_hbase,
               TBLPROPERTIES \
               ('hbase.table.name' = '{table_hbase}')"
     sentence = sentence.format(table_hive=table_hive,
-                    hive_key=",".join(["{}:{}".format(k[0],k[0]) for k in key]),
+                    hive_key=",".join(["{}:{}".format(k[0],k[1]) for k in key]),
                     hive_columns=",".join(["{} {}".format(c[0],c[1]) for c in columns]),
                     hbase_columns=",".join([c[2] for c in columns]),
                     table_hbase=table_hbase)
