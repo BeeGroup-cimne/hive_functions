@@ -8,7 +8,7 @@ def create_hive_module_input_table(hive_connection, table, hdfs_file, columns, i
     :param columns: A list of tupes (field:type) of the table columns
     :param id_task: The id of the task to generate unique tables
     :param sep: The field delimiter in the new file (default=\t)
-    :return: The name of the hive table created
+    :return: The name of the hive table
     """
     definition = []
 
@@ -45,31 +45,31 @@ def delete_hive_table(hive_connection, table):
     return True
 
 
-def create_hive_table_from_hbase_table(hive_connection, table_hive, table_hbase, hive_key, columns, id_task=None):
+def create_hive_table_from_hbase_table(hive_connection, table_hive, table_hbase, key, columns, id_task=None):
     """
     Creates a hive table linked to an hbase table
     :param hive_connection: The connection to hive
     :param table_hive: the hive table to be created
     :param table_hbase: the hbase table with the data
-    :param hive_key: a dictionary {key:type} with the key and type of hive keys
-    :param hive_columns: a list of tuples (key, type, column) with the key and type of hive columns and the column of hbase table
+    :param key: a list of tuples (hbase_key_name, type) of the hbase key
+    :param columns: a list of tuples (hive_column_name, type, "<hbase_column_family>:<hbase_column_name>") of the hbase columns
     :param id_task: The id of the task to generate unique tables
-    :return: the name of the table
+    :return: the name of the hive table
     """
     if id_task:
         table_hive = table_hive + '_' + id_task
     sentence = "CREATE EXTERNAL TABLE IF NOT EXISTS \
-         {table_hive}( key struct<{hive_key}>, {hive_columns} ) \
-         ROW FORMAT DELIMITED \
-         COLLECTION ITEMS TERMINATED BY '~' \
-         STORED BY \
-         'org.apache.hadoop.hive.hbase.HBaseStorageHandler' \
-          WITH SERDEPROPERTIES \
-          ('hbase.columns.mapping' = ':key, {hbase_columns}') \
-          TBLPROPERTIES \
-          ('hbase.table.name' = '{table_hbase}')"
+             {table_hive}( key struct<{hive_key}>, {hive_columns} ) \
+             ROW FORMAT DELIMITED \
+             COLLECTION ITEMS TERMINATED BY '~' \
+             STORED BY \
+             'org.apache.hadoop.hive.hbase.HBaseStorageHandler' \
+              WITH SERDEPROPERTIES \
+              ('hbase.columns.mapping' = ':key, {hbase_columns}') \
+              TBLPROPERTIES \
+              ('hbase.table.name' = '{table_hbase}')"
     sentence = sentence.format(table_hive=table_hive,
-                    hive_key=",".join(["{}:{}".format(k,t) for k,t in hive_key.items()]),
+                    hive_key=",".join(["{}:{}".format(k[0],k[0]) for k in key]),
                     hive_columns=",".join(["{} {}".format(c[0],c[1]) for c in columns]),
                     hbase_columns=",".join([c[2] for c in columns]),
                     table_hbase=table_hbase)
@@ -77,5 +77,44 @@ def create_hive_table_from_hbase_table(hive_connection, table_hive, table_hbase,
     try:
         hive_connection.execute(sentence)
     except Exception as e:
-        raise Exception('Failed to create HIVE temporary table {}: {}'.format(table_hive, e))
+        raise Exception('Failed to create HIVE table {}: {}'.format(table_hive, e))
+    return table_hive
+
+
+def create_hive_partitioned_table(hive_connection, table_hive, columns, partitioner_columns, hdfs_file,
+                                  drop_old_table, id_task=None, sep='\t'):
+    """
+        Creates a hive table linked to an hbase table
+        :param hive_connection: The connection to hive
+        :param table_hive: the hive partitioned table to be created
+        :param columns: a list of tuples (hive_column_name, type)
+        :param partitioner_columns: a list of tuples (hive_column_name, type) of the columns acting as the partitioner of the table.
+        :param hdfs_file: The path hdfs to store the file
+        :param drop_old_table: Drop the old table before the generation of the new one in order to delete deprecated records.
+        :param id_task: The id of the task to generate unique tables
+        :return: the name of the hive table
+    """
+    if id_task:
+        table_hive = table_hive + '_' + id_task
+
+    # HIVE sentence definition
+    sentence = "CREATE TABLE IF NOT EXISTS {table_input}({hive_columns})\
+                PARTITIONED BY ({hive_partitioner}) \
+                ROW FORMAT DELIMITED \FIELDS TERMINATED BY '{sep}' \
+                STORED AS TEXTFILE LOCATION '{location}'"
+    sentence = sentence.format(table_hive= table_hive,
+                               hive_columns= ",".join(["{} {}".format(c[0],c[1]) for c in columns]),
+                               hive_partitioner= ",".join(["{} {}".format(c[0], c[1]) for c in partitioner_columns]),
+                               sep = sep,
+                               location = hdfs_file)
+
+    # If table_needs_to_be_recreated==True, delete the old partitioned table. This only happens when the maximum number of periods of the tertiary measures is bigger than the latest number of periods
+    if drop_old_table is True:
+        drop_table = 'DROP TABLE %s' % table_hive
+        hive_connection.execute(drop_table)
+
+    try:
+        hive_connection.execute(sentence)
+    except Exception as e:
+        raise Exception('Failed to create HIVE partitioned table {}: {}'.format(table_hive, e))
     return table_hive
