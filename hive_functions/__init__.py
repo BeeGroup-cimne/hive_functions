@@ -81,7 +81,7 @@ def create_hive_table_from_hbase_table(hive_connection, table_hive, table_hbase,
     return table_hive
 
 
-def create_hive_partitioned_table(hive_connection, table_hive, columns, partitioner_columns, hdfs_file,
+def create_hive_partitioned_table(hive_connection, table, columns, partitioner_columns, hdfs_file,
                                   drop_old_table, id_task=None, sep='\t'):
     """
         Creates a hive table linked to an hbase table
@@ -95,14 +95,14 @@ def create_hive_partitioned_table(hive_connection, table_hive, columns, partitio
         :return: the name of the hive table
     """
     if id_task:
-        table_hive = table_hive + '_' + id_task
+        table = table + '_' + id_task
 
     # HIVE sentence definition
-    sentence = "CREATE TABLE IF NOT EXISTS {table_input}({hive_columns})\
+    sentence = "CREATE TABLE IF NOT EXISTS {table}({hive_columns})\
                 PARTITIONED BY ({hive_partitioner}) \
                 ROW FORMAT DELIMITED \FIELDS TERMINATED BY '{sep}' \
                 STORED AS TEXTFILE LOCATION '{location}'"
-    sentence = sentence.format(table_hive= table_hive,
+    sentence = sentence.format(table= table,
                                hive_columns= ",".join(["{} {}".format(c[0],c[1]) for c in columns]),
                                hive_partitioner= ",".join(["{} {}".format(c[0], c[1]) for c in partitioner_columns]),
                                sep = sep,
@@ -110,11 +110,11 @@ def create_hive_partitioned_table(hive_connection, table_hive, columns, partitio
 
     # If table_needs_to_be_recreated==True, delete the old partitioned table. This only happens when the maximum number of periods of the tertiary measures is bigger than the latest number of periods
     if drop_old_table is True:
-        drop_table = 'DROP TABLE %s' % table_hive
+        drop_table = 'DROP TABLE %s' % table
         hive_connection.execute(drop_table)
 
     try:
         hive_connection.execute(sentence)
     except Exception as e:
-        raise Exception('Failed to create HIVE partitioned table {}: {}'.format(table_hive, e))
-    return table_hive
+        raise Exception('Failed to create HIVE partitioned table {}: {}'.format(table, e))
+    return table
