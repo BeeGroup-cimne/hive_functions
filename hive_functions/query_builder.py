@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-class BaseQueryBuilder:
+class BaseQueryBuilder(object):
     """
     Base class to generate Hive Queries
     """
