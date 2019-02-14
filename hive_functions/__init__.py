@@ -99,15 +99,15 @@ def create_hive_partitioned_table(hive_connection, table, columns, partitioner_c
 
     # HIVE sentence definition
     sentence = "CREATE TABLE IF NOT EXISTS {table}({hive_columns})\
-                PARTITIONED BY ({hive_partitioner}) \
-                ROW FORMAT DELIMITED \FIELDS TERMINATED BY '{sep}' \
+                PARTITIONED BY ({hive_partitioner})\
+                ROW FORMAT DELIMITED\
+                FIELDS TERMINATED BY '{sep}'\
                 STORED AS TEXTFILE LOCATION '{location}'"
     sentence = sentence.format(table= table,
                                hive_columns= ",".join(["{} {}".format(c[0],c[1]) for c in columns]),
                                hive_partitioner= ",".join(["{} {}".format(c[0], c[1]) for c in partitioner_columns]),
                                sep = sep,
                                location = hdfs_file)
-
     # If table_needs_to_be_recreated==True, delete the old partitioned table. This only happens when the maximum number of periods of the tertiary measures is bigger than the latest number of periods
     if drop_old_table is True:
         drop_table = 'DROP TABLE %s' % table
